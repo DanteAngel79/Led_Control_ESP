@@ -1,0 +1,33 @@
+# Artefactos de compilación
+build/
+builds/
+Led_Web/builds/
+*.elf
+*.map
+*.d
+*.o
+
+# Config local: si personalizas Config.cpp con tu red o tu OTA_PASSWORD,
+# descomenta la línea de abajo para no subirlo por accidente.
+# Config.cpp
+
+# Node (por si se sirve la carpeta web con npx)
+node_modules/
+package-lock.json
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# Empaquetados para distribucion
+*.zip
+
+# El flasheador web se hospeda aparte: no forma parte del repo del firmware
+Led_Web/

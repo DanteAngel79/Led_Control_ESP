@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control LED</title>
+    <style>
+        body { font-family: Arial; background: #000; color: #fff; padding: 20px; margin: 0; }
+        .container { max-width: 500px; margin: 0 auto; background: #1a1a1a; padding: 20px; border-radius: 10px; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #333; }
+        .tab { flex: 1; padding: 12px; background: #282828; border: none; border-radius: 8px 8px 0 0; color: #888; cursor: pointer; font-size: 14px; }
+        .tab.active { background: #1a1a1a; color: #fff; border-bottom: 2px solid #4CAF50; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        button { width: 100%; padding: 15px; margin: 10px 0; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-on { background: #4CAF50; color: #000; }
+        .btn-off { background: #F44336; color: #000; }
+        .btn-save { background: #2196F3; color: #fff; }
+        .btn-reset { background: #FF9800; color: #000; }
+        .effects-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+        .effect-btn { width: 100%; padding: 12px 8px; margin: 0; font-size: 14px; background: #282828; color: #fff; border: 2px solid #444; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+        .effect-btn:hover { background: #383838; border-color: #666; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .effect-btn.active { background: #4CAF50; color: #000; border-color: #4CAF50; font-weight: bold; box-shadow: 0 0 15px rgba(76,175,80,0.5); }
+        .color-btn { width: 60px; height: 60px; margin: 5px; border-radius: 50%; cursor: pointer; display: inline-block; border: 2px solid #333; }
+        input[type=range] { width: 100%; }
+        input[type=text], input[type=number] { width: 100%; padding: 10px; margin: 5px 0; background: #282828; border: 1px solid #444; color: #fff; border-radius: 5px; box-sizing: border-box; }
+        input[type=checkbox] { margin-right: 10px; }
+        label { display: block; margin: 15px 0 5px 0; }
+        h1 { margin-top: 0; margin-bottom: 5px; text-align: center; transition: color 0.3s; }
+        h2 { margin-top: 20px; font-size: 18px; }
+        .info { background: #282828; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 12px; }
+        .device-info { text-align: center; font-size: 12px; color: #888; margin-bottom: 10px; }
+        .device-info span { color: #4CAF50; font-weight: bold; }
+        .status-info { text-align: center; font-size: 14px; margin-bottom: 20px; padding: 8px; border-radius: 5px; background: #282828; }
+        .status-on { color: #4CAF50; font-weight: bold; }
+        .status-off { color: #F44336; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="mainTitle">Control LED</h1>
+        <div class="device-info">
+            Dispositivo: <span id="deviceNameTitle">Cargando...</span> | IP: <span id="deviceIPTitle">Cargando...</span>
+        </div>
+        <div class="status-info">
+            Estado: <span id="ledStatus" class="status-off">APAGADO</span> |
+            Brillo: <span id="currentBrightness">100%</span>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('control')">Control</button>
+            <button class="tab" onclick="showTab('settings')">Configuración</button>
+        </div>
+
+        <!-- TAB CONTROL -->
+        <div id="control" class="tab-content active">
+            <h2>Encendido/Apagado</h2>
+            <button class="btn-on" onclick="sendCmd('/control/on')">Encender</button>
+            <button class="btn-off" onclick="sendCmd('/control/off')">Apagar</button>
+
+            <h2>Colores</h2>
+            <div>
+                <div class="color-btn" style="background: #FF0000;" onclick="setColor(255,0,0)"></div>
+                <div class="color-btn" style="background: #00FF00;" onclick="setColor(0,255,0)"></div>
+                <div class="color-btn" style="background: #0000FF;" onclick="setColor(0,0,255)"></div>
+                <div class="color-btn" style="background: #FFFF00;" onclick="setColor(255,255,0)"></div>
+                <div class="color-btn" style="background: #FF00FF;" onclick="setColor(255,0,255)"></div>
+                <div class="color-btn" style="background: #00FFFF;" onclick="setColor(0,255,255)"></div>
+                <div class="color-btn" style="background: #FFFFFF;" onclick="setColor(255,255,255)"></div>
+            </div>
+
+            <h2>Brillo: <span id="bVal">50</span>%</h2>
+            <input type="range" min="0" max="100" value="50" id="brightness" oninput="updateBrightnessDisplay()" onchange="updateBrightness()">
+
+            <h2>Efectos (21 disponibles)</h2>
+            <div class="effects-grid">
+                <button class="effect-btn" data-effect="static" onclick="setEffect('static')">⏸️ Estático</button>
+                <button class="effect-btn" data-effect="rainbow" onclick="setEffect('rainbow')">🌈 Arcoíris</button>
+                <button class="effect-btn" data-effect="rainbowloop" onclick="setEffect('rainbowloop')">🌈 Loop</button>
+                <button class="effect-btn" data-effect="pulse" onclick="setEffect('pulse')">💓 Pulso</button>
+
+                <button class="effect-btn" data-effect="kitt" onclick="setEffect('kitt')">🚗 KITT</button>
+                <button class="effect-btn" data-effect="kitt2" onclick="setEffect('kitt2')">🚗🚗 KITT2</button>
+                <button class="effect-btn" data-effect="fire" onclick="setEffect('fire')">🔥 Fuego</button>
+                <button class="effect-btn" data-effect="wave" onclick="setEffect('wave')">🌊 Onda</button>
+
+                <button class="effect-btn" data-effect="sparkle" onclick="setEffect('sparkle')">✨ Destellos</button>
+                <button class="effect-btn" data-effect="twinkle" onclick="setEffect('twinkle')">⭐ Estrellas</button>
+                <button class="effect-btn" data-effect="snow" onclick="setEffect('snow')">❄️ Nieve</button>
+                <button class="effect-btn" data-effect="meteor" onclick="setEffect('meteor')">☄️ Meteorito</button>
+
+                <button class="effect-btn" data-effect="strobe" onclick="setEffect('strobe')">⚡ Strobe</button>
+                <button class="effect-btn" data-effect="police" onclick="setEffect('police')">🚨 Policía</button>
+                <button class="effect-btn" data-effect="scanner" onclick="setEffect('scanner')">📡 Scanner</button>
+                <button class="effect-btn" data-effect="bounce" onclick="setEffect('bounce')">⚽ Rebote</button>
+
+                <button class="effect-btn" data-effect="theater" onclick="setEffect('theater')">🎭 Teatro</button>
+                <button class="effect-btn" data-effect="theaterrainbow" onclick="setEffect('theaterrainbow')">🎭 Rainbow</button>
+                <button class="effect-btn" data-effect="running" onclick="setEffect('running')">🏃 Running</button>
+                <button class="effect-btn" data-effect="runninglights" onclick="setEffect('runninglights')">💡 Luces</button>
+
+                <button class="effect-btn" data-effect="wipe" onclick="setEffect('wipe')">🖌️ Wipe</button>
+
+                <button class="effect-btn" data-effect="claude" onclick="setEffect('claude')">🧠✨ Claude IA</button>
+            </div>
+
+            <h2>Sistema</h2>
+            <button class="btn-reset" onclick="resetDevice()">🔄 Reiniciar Dispositivo</button>
+        </div>
+
+        <!-- TAB SETTINGS -->
+        <div id="settings" class="tab-content">
+            <h2>⚙️ Configuración LED</h2>
+            <label>Cantidad de LEDs</label>
+            <input type="number" id="numLeds" min="1" max="150" value="90">
+            <div class="info">Requiere reinicio para aplicar cambios</div>
+
+            <label>Pin de datos <span id="boardName"></span></label>
+            <select id="ledPin"><option value="">Cargando...</option></select>
+            <div class="info">Solo se listan los pines que admite esta placa. Requiere reinicio.</div>
+
+            <h2>🎤 Configuración Alexa</h2>
+            <label>Nombre del Dispositivo</label>
+            <input type="text" id="alexaName" maxlength="63" placeholder="Led Escritorio">
+            <div class="info">Este es el nombre que usarás con Alexa. Ej: "Alexa, enciende Led Escritorio"</div>
+
+            <h2>🌐 Configuración de Red</h2>
+            <label>
+                <input type="checkbox" id="useStaticIP" onchange="toggleIPFields()">
+                Usar IP Estática
+            </label>
+            <div id="ipFields" style="display:none;">
+                <label>Dirección IP</label>
+                <input type="text" id="staticIP" placeholder="192.168.1.50" pattern="^(\d{1,3}\.){3}\d{1,3}$">
+                <label>Gateway</label>
+                <input type="text" id="gateway" placeholder="192.168.1.1" pattern="^(\d{1,3}\.){3}\d{1,3}$">
+                <div class="info">Los cambios de red requieren reinicio del dispositivo</div>
+            </div>
+
+            <h2>💾 Gestión de Configuración</h2>
+            <button class="btn-save" onclick="saveSettings()">💾 Guardar Configuración</button>
+            <button class="btn-reset" onclick="resetSettings()">🔄 Restaurar Valores por Defecto</button>
+            <div id="msg" class="info" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Variable para pausar actualizaciones automáticas
+        var pauseUpdates = false;
+        var pauseTimeout = null;
+
+        // Cargar configuración al iniciar
+        window.onload = function() {
+            loadSettings();
+            updateStatus();
+            // Actualizar estado cada 5 segundos para reducir carga en AsyncWebServer
+            setInterval(updateStatus, 5000);
+        };
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab).classList.add('active');
+        }
+
+        function sendCmd(url) {
+            fetch(url).then(r => r.json()).then(d => {
+                console.log(d);
+                // Actualizar estado inmediatamente después de un comando
+                setTimeout(updateStatus, 300);
+            });
+        }
+
+        function setColor(r,g,b) {
+            sendCmd('/control/color?r='+r+'&g='+g+'&b='+b);
+        }
+
+        function setEffect(effectName) {
+            // Remover clase active de todos los botones
+            document.querySelectorAll('.effect-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Agregar clase active al botón clickeado
+            document.querySelector('[data-effect="'+effectName+'"]').classList.add('active');
+
+            // Enviar comando
+            sendCmd('/control/effect?name='+effectName);
+        }
+
+        function updateBrightnessDisplay() {
+            var b = document.getElementById('brightness').value;
+            document.getElementById('bVal').textContent = b;
+
+            // Pausar actualizaciones automáticas mientras se mueve el slider
+            pauseUpdates = true;
+            clearTimeout(pauseTimeout);
+        }
+
+        function updateBrightness() {
+            var b = document.getElementById('brightness').value;
+            document.getElementById('bVal').textContent = b;
+            sendCmd('/control/brightness?value='+b);
+
+            // Reanudar actualizaciones automáticas después de 3 segundos
+            pauseTimeout = setTimeout(function() {
+                pauseUpdates = false;
+            }, 3000);
+        }
+
+        function updateStatus() {
+            fetch('/control/status')
+                .then(r => r.json())
+                .then(data => {
+                    // Actualizar estado ON/OFF
+                    var statusSpan = document.getElementById('ledStatus');
+                    if(data.state) {
+                        statusSpan.textContent = 'ENCENDIDO';
+                        statusSpan.className = 'status-on';
+                    } else {
+                        statusSpan.textContent = 'APAGADO';
+                        statusSpan.className = 'status-off';
+                    }
+
+                    // Actualizar color del título según el color de los LEDs
+                    var r = data.r || 0;
+                    var g = data.g || 0;
+                    var b = data.b || 0;
+                    var rgbColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+
+                    // Cambiar color del título según el color de los LEDs
+                    document.getElementById('mainTitle').style.color = data.state ? rgbColor : '#fff';
+
+                    // Actualizar brillo
+                    var brightnessPercent = Math.round((data.brightness / 255) * 100);
+                    document.getElementById('currentBrightness').textContent = brightnessPercent + '%';
+
+                    // Solo actualizar slider si el usuario NO está interactuando con él
+                    if (!pauseUpdates) {
+                        document.getElementById('brightness').value = brightnessPercent;
+                        document.getElementById('bVal').textContent = brightnessPercent;
+                    }
+
+                    // Actualizar efecto activo visualmente
+                    if (data.effect) {
+                        document.querySelectorAll('.effect-btn').forEach(btn => btn.classList.remove('active'));
+                        var activeBtn = document.querySelector('[data-effect="'+data.effect+'"]');
+                        if (activeBtn) {
+                            activeBtn.classList.add('active');
+                        }
+                    }
+                })
+                .catch(err => console.log('Error al obtener estado:', err));
+        }
+
+        function toggleIPFields() {
+            var checked = document.getElementById('useStaticIP').checked;
+            document.getElementById('ipFields').style.display = checked ? 'block' : 'none';
+        }
+
+        function loadSettings() {
+            fetch('/control/settings')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('numLeds').value = data.numLeds || 90;
+                    document.getElementById('alexaName').value = data.deviceName || 'Led';
+                    document.getElementById('useStaticIP').checked = data.useStaticIP || false;
+
+                    // Actualizar información del título
+                    document.getElementById('deviceNameTitle').textContent = data.deviceName || 'Led';
+
+                    // Convertir array de IP a string con puntos
+                    if(data.staticIP && Array.isArray(data.staticIP)) {
+                        document.getElementById('staticIP').value = data.staticIP.join('.');
+                    }
+                    if(data.gateway && Array.isArray(data.gateway)) {
+                        document.getElementById('gateway').value = data.gateway.join('.');
+                    }
+
+                    toggleIPFields();
+                });
+
+            // Pines: lista aparte, la impone el firmware según la placa
+            fetch('/control/pins')
+                .then(r => r.json())
+                .then(data => {
+                    var pinSel = document.getElementById('ledPin');
+                    pinSel.innerHTML = '';
+                    (data.ledPinOptions || []).forEach(function(p) {
+                        var opt = document.createElement('option');
+                        opt.value = p.gpio;
+                        opt.textContent = p.label + (p.recommended ? '' : ' - no recomendado');
+                        if (p.gpio === data.ledPin) opt.selected = true;
+                        pinSel.appendChild(opt);
+                    });
+                    if (data.board) document.getElementById('boardName').textContent = '(' + data.board + ')';
+                })
+                .catch(() => {
+                    document.getElementById('ledPin').innerHTML = '<option value="">Error</option>';
+                });
+
+            // Obtener IP actual del dispositivo
+            fetch('/control/info')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('deviceIPTitle').textContent = data.ip || 'N/A';
+                })
+                .catch(() => {
+                    document.getElementById('deviceIPTitle').textContent = 'N/A';
+                });
+        }
+
+        function saveSettings() {
+            if(!confirm('¿Guardar la configuración actual? Deberás reiniciar el dispositivo para aplicar los cambios.')) {
+                return;
+            }
+
+            var settings = {
+                numLeds: document.getElementById('numLeds').value,
+                ledPin: document.getElementById('ledPin').value,
+                alexaName: document.getElementById('alexaName').value,
+                useStaticIP: document.getElementById('useStaticIP').checked,
+                staticIP: document.getElementById('staticIP').value,
+                gateway: document.getElementById('gateway').value
+            };
+
+            fetch('/control/settings/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: new URLSearchParams(settings)
+            })
+            .then(r => r.json())
+            .then(data => {
+                var msg = document.getElementById('msg');
+                msg.textContent = '✅ ' + data.message + ' - Reinicia el dispositivo para aplicar cambios';
+                msg.style.display = 'block';
+                msg.style.background = '#4CAF50';
+                msg.style.color = '#000';
+            })
+            .catch(err => {
+                var msg = document.getElementById('msg');
+                msg.textContent = '❌ Error al guardar';
+                msg.style.display = 'block';
+                msg.style.background = '#F44336';
+            });
+        }
+
+        function resetSettings() {
+            if(confirm('¿Estás seguro de restaurar la configuración por defecto? Se perderán todos los cambios.')) {
+                fetch('/control/settings/reset', {method: 'POST'})
+                    .then(r => r.json())
+                    .then(data => {
+                        var msg = document.getElementById('msg');
+                        msg.textContent = '✅ ' + data.message + ' - Reiniciando en 3 segundos...';
+                        msg.style.display = 'block';
+                        msg.style.background = '#4CAF50';
+                        msg.style.color = '#000';
+                        setTimeout(() => { location.reload(); }, 3000);
+                    })
+                    .catch(err => {
+                        var msg = document.getElementById('msg');
+                        msg.textContent = '❌ Error al restaurar';
+                        msg.style.display = 'block';
+                        msg.style.background = '#F44336';
+                    });
+            }
+        }
+
+        function resetDevice() {
+            if(confirm('¿Estás seguro de reiniciar el dispositivo? Se desconectará temporalmente.')) {
+                // Mostrar mensaje inmediatamente sin esperar respuesta
+                alert('🔄 Dispositivo reiniciando... Espera 10 segundos y recarga la página.');
+                // Enviar comando de reinicio (ignorar respuesta porque el dispositivo se reinicia)
+                fetch('/control/reset', {method: 'POST'}).catch(() => {});
+            }
+        }
+    </script>
+</body>
+</html>
